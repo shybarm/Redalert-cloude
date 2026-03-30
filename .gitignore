@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+.env.local
+*.local
+
+# Next.js
+shamai-ai/.next/
+shamai-ai/out/
+
+# Game build
+game/client/dist/
+game/server/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
