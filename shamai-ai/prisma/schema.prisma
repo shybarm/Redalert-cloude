@@ -1,0 +1,396 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum ItemCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  FOR_PARTS
+}
+
+enum ConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  SOLD
+  EXPIRED
+  REMOVED
+  FLAGGED
+}
+
+enum PublishPlatform {
+  INTERNAL
+  YAD2
+  FACEBOOK
+}
+
+enum PublishStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+  REMOVED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  DISPUTED
+}
+
+enum ShippingMethod {
+  SELF_PICKUP
+  COURIER
+  INSURED_SHIPPING
+}
+
+enum FlagType {
+  COUNTERFEIT
+  PROHIBITED
+  FRAUD
+  SPAM
+  OTHER
+}
+
+// ============================================
+// USER & AUTH (Auth.js compatible)
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  phoneVerified DateTime?
+  image         String?
+  role          UserRole  @default(USER)
+  city          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  estimations  Estimation[]
+  listings     Listing[]
+  purchases    Transaction[] @relation("buyer")
+  sales        Transaction[] @relation("seller")
+  flags        SafetyFlag[]  @relation("reporter")
+
+  @@index([email])
+  @@index([phone])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// ESTIMATION
+// ============================================
+
+model Estimation {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productIdentification Json?
+  aiConditionAssessment ItemCondition?
+  userConditionOverride ItemCondition?
+  confidenceLevel       ConfidenceLevel @default(LOW)
+
+  priceMin        Int?
+  priceMax        Int?
+  priceQuickSale  Int?
+  priceRealistic  Int?
+  priceMaximum    Int?
+
+  adTitle          String? @db.Text
+  adDescription    String? @db.Text
+  adConditionText  String?
+  adSpecs          String? @db.Text
+  adSearchKeywords String[]
+  adPickupShipping String?
+  adCta            String?
+
+  isProhibited           Boolean @default(false)
+  prohibitedReason       String?
+  isSuspectedCounterfeit Boolean @default(false)
+  counterfeitDetails     String?
+
+  user    User              @relation(fields: [userId], references: [id])
+  photos  EstimationPhoto[]
+  listing Listing?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model EstimationPhoto {
+  id           String   @id @default(cuid())
+  estimationId String
+  cloudinaryId String
+  cloudinaryUrl String
+  photoType    String
+  purpose      String?
+  uploadedAt   DateTime @default(now())
+  analysisJson Json?
+
+  estimation Estimation @relation(fields: [estimationId], references: [id], onDelete: Cascade)
+
+  @@index([estimationId])
+}
+
+// ============================================
+// LISTINGS
+// ============================================
+
+model Listing {
+  id           String        @id @default(cuid())
+  userId       String
+  estimationId String?       @unique
+  categoryId   String?
+  status       ListingStatus @default(DRAFT)
+
+  title       String
+  description String    @db.Text
+  condition   ItemCondition
+  specs       Json?
+  keywords    String[]
+  brand       String?
+  model       String?
+
+  priceQuickSale Int
+  priceRealistic Int
+  priceMaximum   Int
+  selectedPrice  Int
+
+  city              String?
+  area              String?
+  selfPickup        Boolean @default(true)
+  courierAvailable  Boolean @default(false)
+  shippingAvailable Boolean @default(false)
+  shippingCost      Int?
+
+  photos ListingPhoto[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+  expiresAt   DateTime?
+
+  user         User          @relation(fields: [userId], references: [id])
+  estimation   Estimation?   @relation(fields: [estimationId], references: [id])
+  category     Category?     @relation(fields: [categoryId], references: [id])
+  publications Publication[]
+  transactions Transaction[]
+  flags        SafetyFlag[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([categoryId])
+  @@index([createdAt])
+  @@index([selectedPrice])
+}
+
+model ListingPhoto {
+  id           String  @id @default(cuid())
+  listingId    String
+  cloudinaryId String
+  cloudinaryUrl String
+  sortOrder    Int     @default(0)
+  isPrimary    Boolean @default(false)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+// ============================================
+// CATEGORIES
+// ============================================
+
+model Category {
+  id       String  @id @default(cuid())
+  nameHe   String
+  nameEn   String
+  slug     String  @unique
+  icon     String?
+  parentId String?
+  sortOrder Int    @default(0)
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+  listings Listing[]
+  priceReferences PriceReference[]
+
+  @@index([parentId])
+  @@index([slug])
+}
+
+// ============================================
+// PUBLISHING
+// ============================================
+
+model Publication {
+  id          String          @id @default(cuid())
+  listingId   String
+  platform    PublishPlatform
+  status      PublishStatus   @default(PENDING)
+  externalId  String?
+  externalUrl String?
+  fee         Int?
+  feePaid     Boolean         @default(false)
+  publishedAt DateTime?
+  error       String?
+  createdAt   DateTime        @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([platform])
+  @@unique([listingId, platform])
+}
+
+// ============================================
+// TRANSACTIONS
+// ============================================
+
+model Transaction {
+  id              String            @id @default(cuid())
+  listingId       String
+  buyerId         String
+  sellerId        String
+  status          TransactionStatus @default(PENDING)
+  amount          Int
+  platformFee     Int?
+  shippingMethod  ShippingMethod?
+  shippingCost    Int?
+  stripePaymentId String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  completedAt     DateTime?
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  buyer   User    @relation("buyer", fields: [buyerId], references: [id])
+  seller  User    @relation("seller", fields: [sellerId], references: [id])
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+// ============================================
+// PRICE REFERENCES (from scraping)
+// ============================================
+
+model PriceReference {
+  id          String         @id @default(cuid())
+  categoryId  String?
+  source      String
+  sourceUrl   String?
+  productName String
+  brand       String?
+  model       String?
+  condition   ItemCondition?
+  price       Int
+  currency    String         @default("ILS")
+  scrapedAt   DateTime       @default(now())
+  isActive    Boolean        @default(true)
+  rawData     Json?
+
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId])
+  @@index([brand, model])
+  @@index([scrapedAt])
+  @@index([source])
+}
+
+// ============================================
+// SAFETY
+// ============================================
+
+model SafetyFlag {
+  id         String    @id @default(cuid())
+  listingId  String?
+  reporterId String?
+  flagType   FlagType
+  reason     String    @db.Text
+  isResolved Boolean   @default(false)
+  resolvedBy String?
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  listing  Listing? @relation(fields: [listingId], references: [id])
+  reporter User?    @relation("reporter", fields: [reporterId], references: [id])
+
+  @@index([listingId])
+  @@index([flagType])
+}
+
+model ProhibitedItem {
+  id          String   @id @default(cuid())
+  category    String
+  keywords    String[]
+  description String
+  isActive    Boolean  @default(true)
+}

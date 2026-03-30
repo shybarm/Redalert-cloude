@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx next build:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx dotenv:*)",
+      "WebFetch(domain:dcsumydwzsxxvytzjtnw.supabase.co)",
+      "Bash(nslookup:*)",
+      "Bash(where:*)",
+      "Bash(node -e \"\nconst regions = [''us-east-1'',''us-east-2'',''us-west-1'',''us-west-2'',''eu-central-1'',''eu-central-2'',''eu-west-1'',''eu-west-2'',''eu-west-3'',''ap-southeast-1'',''ap-southeast-2'',''ap-northeast-1'',''ap-south-1'',''sa-east-1'',''ca-central-1''];\nconst { Client } = require\\(''pg''\\);\nasync function test\\(\\) {\n  for \\(const region of regions\\) {\n    const url = ''postgresql://postgres.dcsumydwzsxxvytzjtnw:Shyanna5656%24%24%24@aws-0-'' + region + ''.pooler.supabase.com:5432/postgres'';\n    const client = new Client\\({ connectionString: url, connectionTimeoutMillis: 5000 }\\);\n    try {\n      await client.connect\\(\\);\n      const res = await client.query\\(''SELECT 1''\\);\n      console.log\\(''SUCCESS: '' + region\\);\n      await client.end\\(\\);\n      return;\n    } catch \\(e\\) {\n      console.log\\(''FAIL '' + region + '': '' + e.message.substring\\(0, 60\\)\\);\n      try { await client.end\\(\\); } catch {}\n    }\n  }\n}\ntest\\(\\);\n\")",
+      "Bash(node -e \"\nconst regions = [''us-east-1'',''us-east-2'',''us-west-1'',''us-west-2'',''eu-central-1'',''eu-central-2'',''eu-west-1'',''eu-west-2'',''eu-west-3'',''ap-southeast-1'',''ap-southeast-2'',''ap-northeast-1'',''ap-south-1'',''sa-east-1'',''ca-central-1''];\nconst { Client } = require\\(''pg''\\);\nasync function test\\(\\) {\n  for \\(const region of regions\\) {\n    const url = ''postgresql://postgres.dcsumydwzsxxvytzjtnw:Shyanna5656%24%24%24@aws-0-'' + region + ''.pooler.supabase.com:5432/postgres'';\n    const client = new Client\\({ connectionString: url, connectionTimeoutMillis: 5000 }\\);\n    try {\n      await client.connect\\(\\);\n      const res = await client.query\\(''SELECT 1''\\);\n      console.log\\(''SUCCESS: '' + region\\);\n      await client.end\\(\\);\n      return;\n    } catch \\(e\\) {\n      console.log\\(''FAIL '' + region + '': '' + e.message.substring\\(0, 80\\)\\);\n      try { await client.end\\(\\); } catch {}\n    }\n  }\n  console.log\\(''No region worked''\\);\n}\ntest\\(\\);\n\")",
+      "Bash(node -e \"\nconst { Client } = require\\(''pg''\\);\nasync function test\\(\\) {\n  // The user may have the project on newer supabase with different pooler format\n  // Also try username = postgres \\(without project ref prefix\\) on direct host\n  const urls = [\n    { label: ''supavisor session mode'', url: ''postgresql://postgres.dcsumydwzsxxvytzjtnw:Shyanna5656%24%24%24@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require'' },\n    { label: ''supavisor transaction mode'', url: ''postgresql://postgres.dcsumydwzsxxvytzjtnw:Shyanna5656%24%24%24@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require'' },\n    { label: ''direct ipv4'', url: ''postgresql://postgres:Shyanna5656%24%24%24@dcsumydwzsxxvytzjtnw.supabase.co:5432/postgres'' },\n  ];\n  for \\(const {label, url} of urls\\) {\n    const client = new Client\\({ connectionString: url, connectionTimeoutMillis: 10000 }\\);\n    try {\n      await client.connect\\(\\);\n      await client.query\\(''SELECT 1''\\);\n      console.log\\(''SUCCESS: '' + label\\);\n      await client.end\\(\\);\n      return;\n    } catch \\(e\\) {\n      console.log\\(''FAIL '' + label + '': '' + e.message.substring\\(0, 120\\)\\);\n      try { await client.end\\(\\); } catch {}\n    }\n  }\n}\ntest\\(\\);\n\")",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)"
+    ]
+  }
+}
